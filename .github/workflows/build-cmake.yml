@@ -51,6 +51,60 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-vs2022-artifacts
+          name: windows-vs2026-artifacts
           path: build/out/
           if-no-files-found: error
+
+
+  build-macos:
+    name: Build on macos (xcode)
+    runs-on: macos-15
+    steps:
+      
+      - name: Check Out Repo
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      
+      - name: Download iPlug2 Prebuilt Libs
+        shell: bash
+        run: |
+          cd iPlug2/Dependencies
+          ./download-prebuilt-libs.sh
+      
+      - name: Download iPlug SDKs
+        shell: bash
+        run: |
+          cd iPlug2/Dependencies/IPlug
+          ./download-iplug-sdks.sh
+        
+      - name: Configure CMake build
+        run: cmake --preset macos-xcode -DIPLUG2_DISABLE_DEPRECATION_WARNINGS=ON -DIPLUG_DEPLOY_PLUGINS=OFF
+        
+      - name: Build Targets
+        run: |
+          cmake --build ./build --config Release --target BetterSF-app
+          cmake --build ./build --config Release --target BetterSF-vst3
+          cmake --build ./build --config Release --target BetterSF-clap
+      
+      - name: Verify Bundles
+        shell: bash
+        run: |
+          test -e "build/out/BetterSF.app"
+          test -e "build/out/BetterSF.vst3"
+          test -e "build/out/BetterSF.clap"
+          echo "All bundles exist"
+      
+      - name: Run Application
+        shell: bash
+        run: |
+          ./build/out/BetterSF.app/Contents/MacOS/BetterSF
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-xcode-artifacts
+          path: build/out/
+          if-no-files-found: error
+        
+        
