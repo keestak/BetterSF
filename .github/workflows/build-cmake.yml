@@ -1,56 +1,56 @@
 name: Build CMake
 
 on:
-	push:
-	pull_request:
+  push:
+  pull_request:
 
 jobs:
-	build-windows:
-		name: Build on Windows
-		runs-on: windows-2025-vs2026
-		steps:
-			- name: Check Out Repo
-				uses: actions/checkout@v6
-				with:
-					submodules: recursive
-			
-			- name: Download iPlug2 Prebuilt Libs
-			shell: bash
-			run: |
-				cd iPlug2/Dependencies
-				./download-prebuilt-libs.sh
-			
-			- name: Download iPlug SDKs
-			shell: bash
-			run: |
-				cd iPlug2/Dependencies/IPlug
-				./download-iplug-sdks.sh
-				
-			- name: Configure CMake build
-				run: cmake -S . -B build -G "Visual Studio 18 2026" -A x64
-			
-			-name: Build Targets
-				run: |
-					cmake --build ./build --config Release --target BetterSF-app
-					cmake --build ./build --config Release --target BetterSF-vst3
-					cmake --build ./build --config Release --target BetterSF-clap
-			
-			- name: Verify Bundles
-				shell: pwsh
-				run: |
-					if (!(Test-Path "build\out\BetterSF.exe")) { exit 1 }
-					if (!(Test-Path "build\out\BetterSF.vst3")) { exit 1 }
-					if (!(Test-Path "build\out\BetterSF.clap")) { exit 1 }
-					echo "All bundles exist"
-			
-			- name: Run Application
-				shell: pwsh
-				run: |
-					& ".\build\out\BetterSF.exe"
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-2025-vs2026
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      
+      - name: Download iPlug2 Prebuilt Libs
+      shell: bash
+      run: |
+        cd iPlug2/Dependencies
+        ./download-prebuilt-libs.sh
+      
+      - name: Download iPlug SDKs
+      shell: bash
+      run: |
+        cd iPlug2/Dependencies/IPlug
+        ./download-iplug-sdks.sh
+        
+      - name: Configure CMake build
+        run: cmake -S . -B build -G "Visual Studio 18 2026" -A x64
+      
+      -name: Build Targets
+        run: |
+          cmake --build ./build --config Release --target BetterSF-app
+          cmake --build ./build --config Release --target BetterSF-vst3
+          cmake --build ./build --config Release --target BetterSF-clap
+      
+      - name: Verify Bundles
+        shell: pwsh
+        run: |
+          if (!(Test-Path "build\out\BetterSF.exe")) { exit 1 }
+          if (!(Test-Path "build\out\BetterSF.vst3")) { exit 1 }
+          if (!(Test-Path "build\out\BetterSF.clap")) { exit 1 }
+          echo "All bundles exist"
+      
+      - name: Run Application
+        shell: pwsh
+        run: |
+          & ".\build\out\BetterSF.exe"
 
-			- name: Upload Artifacts
-				uses: actions/upload-artifact@v4
-				with:
-					name: windows-vs2022-artifacts
-					path: build/out/
-					if-no-files-found: error
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-vs2022-artifacts
+          path: build/out/
+          if-no-files-found: error
