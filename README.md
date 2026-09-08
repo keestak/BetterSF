@@ -15,6 +15,14 @@ Build with CMake using:
 ```bash
 cmake --build build --config Release
 ```
+
+To build a specific target, use:
+```bash
+cmake --build ./build --config Release --target BetterSF-app
+cmake --build ./build --config Release --target BetterSF-vst3
+cmake --build ./build --config Release --target BetterSF-clap
+```
+
 This will automatically download and build fluidsynth which this project depends on, so it must be run at least once. Afterwards, you can open the BetterSF.sln file in visual studio to edit and build it.
 
 ***
