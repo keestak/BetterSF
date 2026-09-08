@@ -2,6 +2,8 @@
 A soundfont (sf2) loader and player meant for use as a plugin instrument.
 This software is built with [iPlug2](https://github.com/iplug2/iplug2) and [Fluidsynth](https://github.com/FluidSynth/fluidsynth).
 
+<img width="822" height="671" alt="image" src="https://github.com/user-attachments/assets/958e2eb4-5bc8-44db-97ff-8c736dd23c19" />
+
 ***
 # Building from source
 
