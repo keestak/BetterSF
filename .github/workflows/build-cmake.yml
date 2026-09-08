@@ -15,21 +15,21 @@ jobs:
           submodules: recursive
       
       - name: Download iPlug2 Prebuilt Libs
-      shell: bash
-      run: |
-        cd iPlug2/Dependencies
-        ./download-prebuilt-libs.sh
+        shell: bash
+        run: |
+          cd iPlug2/Dependencies
+          ./download-prebuilt-libs.sh
       
       - name: Download iPlug SDKs
-      shell: bash
-      run: |
-        cd iPlug2/Dependencies/IPlug
-        ./download-iplug-sdks.sh
+        shell: bash
+        run: |
+          cd iPlug2/Dependencies/IPlug
+          ./download-iplug-sdks.sh
         
       - name: Configure CMake build
         run: cmake -S . -B build -G "Visual Studio 18 2026" -A x64
-      
-      -name: Build Targets
+        
+      - name: Build Targets
         run: |
           cmake --build ./build --config Release --target BetterSF-app
           cmake --build ./build --config Release --target BetterSF-vst3
