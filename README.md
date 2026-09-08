@@ -36,3 +36,6 @@ BetterSF uses [Fluidsynth](https://github.com/FluidSynth/fluidsynth)
 
 This software statically links to fluidsynth, which is fetched and built via CMake.
 
+***
+
+This software was developed without the use of AI tools and I would like to keep it that way.
