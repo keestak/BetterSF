@@ -3,6 +3,7 @@ name: Build CMake
 on:
   push:
   pull_request:
+  workflow_call:
 
 jobs:
   build-windows:
