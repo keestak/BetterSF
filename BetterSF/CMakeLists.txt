@@ -16,3 +16,14 @@ iplug_add_plugin(${PROJECT_NAME}
   LINK
     libfluidsynth
 )
+
+if(WIN32)
+  set(_rc_file "${CMAKE_CURRENT_SOURCE_DIR}/resources/main.rc")
+
+  target_sources(BetterSF-vst3 PRIVATE "${_rc_file}")
+  target_sources(BetterSF-clap PRIVATE "${_rc_file}")
+
+  set_source_files_properties("${_rc_file}" PROPERTIES
+    COMPILE_FLAGS "/I\"${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts\" /I\"${CMAKE_CURRENT_SOURCE_DIR}/resources/img\" /I\"${CMAKE_CURRENT_SOURCE_DIR}/resources\""
+  )
+endif()
