@@ -83,22 +83,22 @@ jobs:
         
       - name: Build Targets
         run: |
-          cmake --build ./build --config Release --target BetterSF-app
-          cmake --build ./build --config Release --target BetterSF-vst3
-          cmake --build ./build --config Release --target BetterSF-clap
+          cmake --build --preset macos-xcode --target BetterSF-app
+          cmake --build --preset macos-xcode --target BetterSF-vst3
+          cmake --build --preset macos-xcode --target BetterSF-clap
       
       - name: Verify Bundles
         shell: bash
         run: |
-          test -e "build/out/BetterSF.app"
-          test -e "build/out/BetterSF.vst3"
-          test -e "build/out/BetterSF.clap"
+          test -e "build/macos-xcode/out/BetterSF.app"
+          test -e "build/macos-xcode/out/BetterSF.vst3"
+          test -e "build/macos-xcode/out/BetterSF.clap"
           echo "All bundles exist"
       
       - name: Run Application
         shell: bash
         run: |
-          ./build/out/BetterSF.app/Contents/MacOS/BetterSF
+          ./build/macos-xcode/out/BetterSF.app/Contents/MacOS/BetterSF
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
