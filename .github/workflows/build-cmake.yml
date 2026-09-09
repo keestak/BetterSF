@@ -79,33 +79,33 @@ jobs:
           ./download-iplug-sdks.sh
         
       - name: Configure CMake build
-        run: cmake --preset macos-xcode -DIPLUG2_DISABLE_DEPRECATION_WARNINGS=ON -DIPLUG_DEPLOY_PLUGINS=OFF
+        run: cmake --preset macos-xcode-universal -DIPLUG2_DISABLE_DEPRECATION_WARNINGS=ON -DIPLUG_DEPLOY_PLUGINS=OFF
         
       - name: Build Targets
         run: |
-          cmake --build --preset macos-xcode --target BetterSF-app
-          cmake --build --preset macos-xcode --target BetterSF-vst3
-          cmake --build --preset macos-xcode --target BetterSF-clap
+          cmake --build --preset macos-xcode-universal --target BetterSF-app
+          cmake --build --preset macos-xcode-universal --target BetterSF-vst3
+          cmake --build --preset macos-xcode-universal --target BetterSF-clap
           
       - name: Verify Bundles
         shell: bash
         run: |
-          test -e "build/macos-xcode/out/Release/BetterSF.app"
-          test -e "build/macos-xcode/out/Release/BetterSF.vst3"
-          test -e "build/macos-xcode/out/Release/BetterSF.clap"
+          test -e "build/macos-xcode-universal/out/Release/BetterSF.app"
+          test -e "build/macos-xcode-universal/out/Release/BetterSF.vst3"
+          test -e "build/macos-xcode-universal/out/Release/BetterSF.clap"
           echo "All bundles exist"
 
       # github runner seems to hang here even though the application does build and run without failing immediately so i'll just test it manually for now...
       # - name: Run Application
       #   shell: bash
       #   run: |
-      #     ./build/macos-xcode/out/Release/BetterSF.app/Contents/MacOS/BetterSF
+      #     ./build/macos-xcode-universal/out/Release/BetterSF.app/Contents/MacOS/BetterSF
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-xcode-artifacts
-          path: build/macos-xcode/out/Release
+          path: build/macos-xcode-universal/out/Release
           if-no-files-found: error
         
         
