@@ -86,25 +86,25 @@ jobs:
           cmake --build --preset macos-xcode --target BetterSF-app
           cmake --build --preset macos-xcode --target BetterSF-vst3
           cmake --build --preset macos-xcode --target BetterSF-clap
-      
+          
       - name: Verify Bundles
         shell: bash
         run: |
-          test -e "build/macos-xcode/out/BetterSF.app"
-          test -e "build/macos-xcode/out/BetterSF.vst3"
-          test -e "build/macos-xcode/out/BetterSF.clap"
+          test -e "build/macos-xcode/out/Release/BetterSF.app"
+          test -e "build/macos-xcode/out/Release/BetterSF.vst3"
+          test -e "build/macos-xcode/out/Release/BetterSF.clap"
           echo "All bundles exist"
       
       - name: Run Application
         shell: bash
         run: |
-          ./build/macos-xcode/out/BetterSF.app/Contents/MacOS/BetterSF
+          ./build/macos-xcode/out/Release/BetterSF.app/Contents/MacOS/BetterSF
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-xcode-artifacts
-          path: build/out/
+          path: build/out/Release/
           if-no-files-found: error
         
         
