@@ -105,7 +105,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-xcode-artifacts
-          path: build/out/Release/
+          path: build/macos-xcode/out/Release
           if-no-files-found: error
         
         
