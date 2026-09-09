@@ -76,6 +76,12 @@ BetterSF::BetterSF(const InstanceInfo& info)
 			OnParamChange(kParamPreset1 + currentChannel);
 			SendCurrentParamValuesFromDelegate();
 			});
+		mListViewControl->mOnDropCallback = [&](const char* file) {
+			LoadSoundFontFromPath(file, !mKeepSoundfontProgramIdxBetweenLoads);
+			GetParam(kParamCurrentChannel)->Set(0);
+			if (!mCurrentSoundfontFilePath.empty())
+				mFileLoaderDisplay->AddFilePath(mCurrentSoundfontFilePath, true, false);
+			};
 		pGraphics->AttachControl(mListViewControl);
 
 		KsDropdownList* interpChanger = new KsDropdownList(b.GetFromTRHC(250, 25).GetTranslated(-30, 80), kParamInterpMode, "Interpolation: ");
@@ -89,10 +95,7 @@ BetterSF::BetterSF(const InstanceInfo& info)
 		mFileLoaderDisplay = new FileLoaderDisplay(b.GetFromTLHC(600, 30).GetTranslated(100, 10), [&](IControl* pCaller) { PromptChangeSoundfont(); });
 		mFileLoaderDisplay->mLoadFileCallback = [&](const char* file) {
 			LoadSoundFontFromPath(file, !mKeepSoundfontProgramIdxBetweenLoads);
-
 			GetParam(kParamCurrentChannel)->Set(0);
-
-			mListViewControl->SelectIndex(0);
 			};
 		pGraphics->AttachControl(mFileLoaderDisplay);
 
@@ -523,6 +526,9 @@ bool BetterSF::LoadSoundFontFromPath(std::string file, bool resetPresets)
 		mCurrentSoundfontFilePath = "";
 		mSoundFontID = 0;
 		DBGMSG("Failed to load soundfont '%s' (returned %d)\n", file.c_str(), mSoundFontID);
+		mCurrentPresets.clear();
+		mFileLoaderDisplay->ClearFilePath();
+		UpdateUI();
 		return false;
 	}
 

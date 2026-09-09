@@ -139,6 +139,8 @@ public:
 	{
 	}
 
+	std::function<void(const char*)> mOnDropCallback = nullptr;
+
 	void AddListItem(std::string item)
 	{
 		mListItems.push_back(item);
@@ -402,6 +404,12 @@ private:
 		}
 	}
 
+	void OnDrop(const char* str) override
+	{
+		if (mOnDropCallback)
+			mOnDropCallback(str);
+	}
+
 };
 
 class RoundRectBgPanel : public IControl
@@ -505,6 +513,12 @@ public:
 		}
 
 		SetDirty(triggerAction);
+	}
+
+	void ClearFilePath()
+	{
+		mCurrentFilePath.clear();
+		SetDirty(false);
 	}
 
 	const char* CurrentFilePath()
@@ -622,6 +636,12 @@ private:
 				mLoadFileCallback(mPreviousLoadedFiles[i].c_str());
 			}
 		}
+	}
+
+	void OnDrop(const char* str) override
+	{
+		if (mLoadFileCallback)
+			mLoadFileCallback(str);
 	}
 };
 
