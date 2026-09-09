@@ -43,14 +43,15 @@ jobs:
           cp release-assets/windows-vs2026-artifacts/BetterSF.exe \
              final-assets/BetterSF-Win64.exe
 
-          cp release-assets/windows-vs2026-artifacts/BetterSF.vst3 \
-             final-assets/BetterSF-Win64.vst3
-
           cp release-assets/windows-vs2026-artifacts/BetterSF.clap \
              final-assets/BetterSF-Win64.clap
+          
+          cd release-assets/windows-vs2026-artifacts
+          
+          zip -r "$GITHUB_WORKSPACE/final-assets/BetterSF-Win64.vst3.zip" BetterSF.vst3
 
           # macOS
-          cd release-assets/macos-xcode-artifacts
+          cd "$GITHUB_WORKSPACE/release-assets/macos-xcode-artifacts"
 
           zip -r "$GITHUB_WORKSPACE/final-assets/BetterSF-macOS.app.zip" BetterSF.app
           zip -r "$GITHUB_WORKSPACE/final-assets/BetterSF-macOS.vst3.zip" BetterSF.vst3
