@@ -2,7 +2,7 @@
 #define PLUG_MFR "keestak"
 #define PLUG_VERSION_HEX 0x00010000
 #define PLUG_VERSION_STR "1.0.0"
-#define PLUG_UNIQUE_ID 'B'
+#define PLUG_UNIQUE_ID 'K'
 #define PLUG_MFR_ID 'K'
 #define PLUG_URL_STR "https://github.com/keestak/"
 #define PLUG_EMAIL_STR "keestak@proton.me"

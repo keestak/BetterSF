@@ -5,6 +5,14 @@
 #include "IplugMidi.h"
 #include "fluidsynth.h"
 #include "CustomControls.h"
+#include <mutex>
+
+#define StringFormatted(fmt, ...) \
+    ([&]() { \
+        WDL_String _str; \
+        _str.SetFormatted(4096, fmt, __VA_ARGS__); \
+        return std::string(_str.Get()); \
+    }())
 
 const int kNumPresets = 1;
 
@@ -81,6 +89,7 @@ class BetterSF final : public Plugin
 {
 public:
 	BetterSF(const InstanceInfo& info);
+	~BetterSF();
 
 #if IPLUG_DSP // http://bit.ly/2S64BDd
 public:
@@ -100,7 +109,8 @@ public:
 	int UnserializeState(const IByteChunk& chunk, int startPos) override;
 	void SaveUserSettings();
 	void LoadUserSettings();
-
+	void LogMessage(const std::string& message, bool trunc = false) const;
+	
 private:
 	fluid_settings_t* mFluidSettings = nullptr;
 	fluid_synth_t* mSynth = nullptr;
@@ -109,8 +119,10 @@ private:
 	std::vector<float> mLeftBuffer, mRightBuffer;
 	std::string mCurrentSoundfontFilePath = "";
 	std::string mDefaultSoundfontFilePath = "";
+	std::mutex mSynthMutex;
 	bool mKeepSoundfontProgramIdxBetweenLoads = true;
-	bool mUiNeedsRefresh = false;
+	std::atomic<bool> mUiNeedsRefresh{ false };
+	bool mEnableLogs = false;
 
 	KsListViewControl* mListViewControl = nullptr;
 	FileLoaderDisplay* mFileLoaderDisplay = nullptr;

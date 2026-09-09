@@ -10,6 +10,7 @@ BetterSF::BetterSF(const InstanceInfo& info)
 	: iplug::Plugin(info, MakeConfig(kNumParams, kNumPresets))
 {
 	//EnsureDefaultPreset();
+	LogMessage("BetterSF Constructor\n", true);
 
 	for (int i = 0; i < kNumParams; i++)
 		mParamAdditionalData[i] = "";
@@ -105,12 +106,14 @@ BetterSF::BetterSF(const InstanceInfo& info)
 				int idx = pMenu->GetChosenItemIdx();
 				if (idx == 0) mDefaultSoundfontFilePath = mCurrentSoundfontFilePath;
 				if (idx == 1) mKeepSoundfontProgramIdxBetweenLoads = !mKeepSoundfontProgramIdxBetweenLoads;
-				if (idx == 2) GetUI()->ShowMessageBox("BetterSF\nMade by keestak\nBuilt with Iplug2 and Fluidsynth", "About BetterSF", EMsgBoxType::kMB_OK);
+				if (idx == 2) mEnableLogs = !mEnableLogs;
+				if (idx == 3) GetUI()->ShowMessageBox("BetterSF\nMade by keestak\nBuilt with Iplug2 and Fluidsynth", "About BetterSF", EMsgBoxType::kMB_OK);
 				SaveUserSettings();
 				});
 			menu.AddItem("Set as default soundfont", 0);
 			menu.AddItem("Keep selected preset index on file change", 1, mKeepSoundfontProgramIdxBetweenLoads ? IPopupMenu::Item::kChecked : 0);
-			menu.AddItem("About...", 2);
+			menu.AddItem("Enable logs", 2, mEnableLogs ? IPopupMenu::Item::kChecked : 0);
+			menu.AddItem("About...", 3);
 			GetUI()->CreatePopupMenu(*pCaller, menu, pCaller->GetRECT());
 
 			}));
@@ -119,16 +122,19 @@ BetterSF::BetterSF(const InstanceInfo& info)
 			int currentSelectedChannel = pCaller->As<KsChannelSelector>()->SelectedChannel();
 
 			GetParam(kParamCurrentChannel)->Set(currentSelectedChannel);
+			{
+				std::lock_guard<std::mutex> lock(mSynthMutex);
 
-			fluid_preset_t* preset = fluid_synth_get_channel_preset(mSynth, currentSelectedChannel);
+				fluid_preset_t* preset = fluid_synth_get_channel_preset(mSynth, currentSelectedChannel);
 
-			if (preset == nullptr)
-				return;
+				if (preset == nullptr)
+					return;
 
-			std::string bank = std::to_string(fluid_preset_get_banknum(preset));
-			std::string num = std::to_string(fluid_preset_get_num(preset));
+				std::string bank = std::to_string(fluid_preset_get_banknum(preset));
+				std::string num = std::to_string(fluid_preset_get_num(preset));
 
-			mListViewControl->SelectWithPrefix(bank + " " + num);
+				mListViewControl->SelectWithPrefix(bank + " " + num);
+			}
 			});
 		pGraphics->AttachControl(mChannelSelector);
 		pGraphics->AttachControl(new KsEditableTextControl(b.GetFromTLHC(25 * 16, 25).GetTranslated(20, 90), [&](IControl* pCaller) {
@@ -175,21 +181,39 @@ BetterSF::BetterSF(const InstanceInfo& info)
 		pGraphics->AttachControl(new KsControlActiveToggle(toggleRect.GetTranslated(0, 220), "Filter"));
 
 		KsKnobControl* cutoffKnob = addFluidControlKnob(0, 2, "Cutoff", "", kParamFilterCutoff);
-		cutoffKnob->SetActionFunction([&](IControl* pCaller) { fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_FILTER_CUTOFF, 127 * (1.0 - pCaller->GetValue())); });
+		cutoffKnob->SetActionFunction([&](IControl* pCaller) {
+			std::lock_guard<std::mutex> lock(mSynthMutex);
+			if (!mSynth) return;
+			fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_FILTER_CUTOFF, 127 * (1.0 - pCaller->GetValue())); });
 		KsKnobControl* resonanceKnob = addFluidControlKnob(1, 2, "Res", "", kParamFilterResonance);
-		resonanceKnob->SetActionFunction([&](IControl* pCaller) { fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_FILTER_RESONANCE, 127 * pCaller->GetValue()); });
+		resonanceKnob->SetActionFunction([&](IControl* pCaller) {
+			std::lock_guard<std::mutex> lock(mSynthMutex);
+			if (!mSynth) return;
+			fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_FILTER_RESONANCE, 127 * pCaller->GetValue()); });
 
 		//envelope
 		pGraphics->AttachControl(new KsControlActiveToggle(toggleRect.GetTranslated(0, 330), "Envelope"));
 
 		KsKnobControl* attackKnob = addFluidControlKnob(0, 3, "A", "", kParamEnvA);
-		attackKnob->SetActionFunction([&](IControl* pCaller) { fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_A, 127 * pCaller->GetValue()); });
+		attackKnob->SetActionFunction([&](IControl* pCaller) {
+			std::lock_guard<std::mutex> lock(mSynthMutex);
+			if (!mSynth) return;
+			fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_A, 127 * pCaller->GetValue()); });
 		KsKnobControl* decayKnob = addFluidControlKnob(1, 3, "D", "", kParamEnvD);
-		decayKnob->SetActionFunction([&](IControl* pCaller) { fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_D, 127 * pCaller->GetValue()); });
+		decayKnob->SetActionFunction([&](IControl* pCaller) {
+			std::lock_guard<std::mutex> lock(mSynthMutex);
+			if (!mSynth) return;
+			fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_D, 127 * pCaller->GetValue()); });
 		KsKnobControl* susKnob = addFluidControlKnob(2, 3, "S", "", kParamEnvS);
-		susKnob->SetActionFunction([&](IControl* pCaller) { fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_S, 127 * pCaller->GetValue()); });
+		susKnob->SetActionFunction([&](IControl* pCaller) {
+			std::lock_guard<std::mutex> lock(mSynthMutex);
+			if (!mSynth) return;
+			fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_S, 127 * pCaller->GetValue()); });
 		KsKnobControl* relKnob = addFluidControlKnob(3, 3, "R", "", kParamEnvR);
-		relKnob->SetActionFunction([&](IControl* pCaller) { fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_R, 127 * pCaller->GetValue()); });
+		relKnob->SetActionFunction([&](IControl* pCaller) {
+			std::lock_guard<std::mutex> lock(mSynthMutex);
+			if (!mSynth) return;
+			fluid_synth_cc(mSynth, 0, FluidSynthOptionalCC::FLUID_ENV_R, 127 * pCaller->GetValue()); });
 
 		if (!mCurrentSoundfontFilePath.empty())
 			UpdateUI();
@@ -269,7 +293,7 @@ void BetterSF::ProcessMidiMsgFromBlock(const IMidiMsg& msg)
 	int status = msg.StatusMsg();
 	IMidiMsg::EControlChangeMsg ccidx = msg.ControlChangeIdx();
 
-	DBGMSG("NoteOn: ch=%i, note=%i, vel=%i, cc=%i, cc val=%f, pitch=%f\n", msg.Channel(), msg.NoteNumber(), msg.Velocity(), ccidx, msg.ControlChange(ccidx), (msg.PitchWheel() + 1.0) * 0.5);
+	LogMessage(StringFormatted("NoteOn: ch=%i, note=%i, vel=%i, cc=%i, cc val=%f, pitch=%f\n", msg.Channel(), msg.NoteNumber(), msg.Velocity(), ccidx, msg.ControlChange(ccidx), (msg.PitchWheel() + 1.0) * 0.5));
 
 	switch (status)
 	{
@@ -322,17 +346,19 @@ void BetterSF::UpdateUI()
 		return;
 	}
 
+	LogMessage("=== UI UPDATE ===\n");
+
 	mListViewControl->ClearListItems();
 	mFileLoaderDisplay->AddFilePath(mCurrentSoundfontFilePath, true, false);
 
 	if (!mSoundfont)
 	{
-		DBGMSG("No soundfont loaded (ID=%d)\n", mSoundFontID);
+		LogMessage(StringFormatted("No soundfont loaded (ID=%d)\n", mSoundFontID));
 		return;
 	}
 
 	const char* sname = fluid_sfont_get_name(mSoundfont);
-	DBGMSG("SoundFont ID %d: %s\n", mSoundFontID, sname ? sname : "(null)");
+	LogMessage(StringFormatted("SoundFont ID %d: %s\n", mSoundFontID, sname ? sname : "(null)"));
 
 	for (int i = 0; i < mCurrentPresets.size(); i++)
 	{
@@ -347,6 +373,8 @@ void BetterSF::UpdateUI()
 	mListViewControl->SelectIndex(GetParam(kParamPreset1 + currentChannel)->Int(), false, false);
 
 	GetUI()->SetAllControlsDirty();
+
+	LogMessage("=== END UI UPDATE ===\n");
 }
 
 void BetterSF::PopulateCurrentPresetsList()
@@ -367,48 +395,61 @@ void BetterSF::PopulateCurrentPresetsList()
 
 		mCurrentPresets.push_back(pi);
 
-		DBGMSG("Bank: %i, Program: %i, Name: %s\n", bank, num, name.c_str());
+		LogMessage(StringFormatted("Bank: %i, Program: %i, Name: %s\n", bank, num, name.c_str()));
 	}
 }
 
 void BetterSF::OnReset()
 {
-	LoadUserSettings();
+	LogMessage("OnReset\n");
 
-	mLeftBuffer.resize(GetBlockSize());
-	mRightBuffer.resize(GetBlockSize());
+	std::string soundfontPath;
 
-	if (mLastBlockSize != GetBlockSize())
 	{
-		mMidiQueue.Resize(GetBlockSize());
-		mLastBlockSize = GetBlockSize();
+		std::lock_guard<std::mutex> lock(mSynthMutex);
+
+		LoadUserSettings();
+
+		mLeftBuffer.resize(GetBlockSize());
+		mRightBuffer.resize(GetBlockSize());
+
+		if (mLastBlockSize != GetBlockSize())
+		{
+			mMidiQueue.Resize(GetBlockSize());
+			mLastBlockSize = GetBlockSize();
+		}
+		mMidiQueue.Flush(GetBlockSize());
+
+		if (mSynth)
+		{
+			delete_fluid_synth(mSynth);
+			mSynth = nullptr;
+		}
+		if (mFluidSettings)
+		{
+			delete_fluid_settings(mFluidSettings);
+			mFluidSettings = nullptr;
+		}
+
+		mFluidSettings = new_fluid_settings();
+		fluid_settings_setnum(mFluidSettings, "synth.sample-rate", GetSampleRate());
+		fluid_settings_setnum(mFluidSettings, "synth.polyphony", 256);
+		mSynth = new_fluid_synth(mFluidSettings);
+
+		fluid_synth_set_gain(mSynth, GetParam(kParamGain)->Value());
+
+		SetUpFluidModulators();
+
+		soundfontPath = mCurrentSoundfontFilePath; //get this here hopefully for better thread safety
 	}
-	mMidiQueue.Flush(GetBlockSize());
 
-	if (mSynth)
-	{
-		delete_fluid_synth(mSynth);
-		mSynth = nullptr;
-	}
-	if (mFluidSettings)
-	{
-		delete_fluid_settings(mFluidSettings);
-		mFluidSettings = nullptr;
-	}
-
-	mFluidSettings = new_fluid_settings();
-	fluid_settings_setnum(mFluidSettings, "synth.sample-rate", GetSampleRate());
-	fluid_settings_setnum(mFluidSettings, "synth.polyphony", 256);
-	mSynth = new_fluid_synth(mFluidSettings);
-
-	fluid_synth_set_gain(mSynth, GetParam(kParamGain)->Value());
-
-	SetUpFluidModulators();
-
-	if (!mCurrentSoundfontFilePath.empty())
-		LoadSoundFontFromPath(mCurrentSoundfontFilePath);
+	if (!soundfontPath.empty())
+		LoadSoundFontFromPath(soundfontPath);
 	else if (!mDefaultSoundfontFilePath.empty())
-		LoadSoundFontFromPath(mDefaultSoundfontFilePath);
+	 {
+			LogMessage("Loading default soundfont\n");
+			LoadSoundFontFromPath(mDefaultSoundfontFilePath);
+	 }
 }
 
 void BetterSF::ProcessMidiMsg(const IMidiMsg& msg)
@@ -499,7 +540,7 @@ void BetterSF::PromptChangeSoundfont()
 		{
 			if (file.GetLength() > 0)
 			{
-				DBGMSG("SELECTED SOUNDFONT: %s, %s\n", file.Get(), path.Get());
+				LogMessage(StringFormatted("SELECTED SOUNDFONT: %s, %s\n", file.Get(), path.Get()));
 				LoadSoundFontFromPath(file.Get(), !mKeepSoundfontProgramIdxBetweenLoads);
 			}
 		};
@@ -510,6 +551,7 @@ void BetterSF::PromptChangeSoundfont()
 
 bool BetterSF::LoadSoundFontFromPath(std::string file, bool resetPresets)
 {
+	std::lock_guard<std::mutex> lock(mSynthMutex);
 	if (!mSynth) return false;
 	if (file.empty()) return false;
 
@@ -525,10 +567,10 @@ bool BetterSF::LoadSoundFontFromPath(std::string file, bool resetPresets)
 	{
 		mCurrentSoundfontFilePath = "";
 		mSoundFontID = 0;
-		DBGMSG("Failed to load soundfont '%s' (returned %d)\n", file.c_str(), mSoundFontID);
+		LogMessage(StringFormatted("Failed to load soundfont '%s' (returned %d)\n", file.c_str(), mSoundFontID));
 		mCurrentPresets.clear();
 		mFileLoaderDisplay->ClearFilePath();
-		UpdateUI();
+		mUiNeedsRefresh = true;
 		return false;
 	}
 
@@ -547,8 +589,8 @@ bool BetterSF::LoadSoundFontFromPath(std::string file, bool resetPresets)
 	for (int p = 0; p < kNumParams; p++)
 		OnParamChange(p);
 
-	DBGMSG("Loaded soundfont '%s'\n", file.c_str(), mSoundFontID);
-	UpdateUI();
+	LogMessage(StringFormatted("Loaded soundfont '%s'\n", file.c_str(), mSoundFontID));
+	mUiNeedsRefresh = true;
 	return true;
 }
 
@@ -648,18 +690,21 @@ void BetterSF::SetUpFluidModulators() //reference https://github.com/mateusz/flu
 
 bool BetterSF::SerializeState(IByteChunk& chunk) const
 {
+	LogMessage("SERIALIZE STATE\n");
 	chunk.PutStr(mCurrentSoundfontFilePath.c_str());
 	return SerializeParams(chunk);
 }
 
 int BetterSF::UnserializeState(const IByteChunk& chunk, int startPos)
 {
+	LogMessage("UNSERIALIZE STATE\n");
 	WDL_String filePath;
 	startPos = chunk.GetStr(filePath, startPos);
 	startPos = UnserializeParams(chunk, startPos);
 	mCurrentSoundfontFilePath = std::string(filePath.Get());
 	if (mSynth && !mCurrentSoundfontFilePath.empty())
 	{
+		LogMessage(StringFormatted("Loading unserialized soundfont path: %s\n", mCurrentSoundfontFilePath.c_str()));
 		LoadSoundFontFromPath(mCurrentSoundfontFilePath);
 	}
 	return startPos;
@@ -677,7 +722,10 @@ void BetterSF::SaveUserSettings()
 	if (f) {
 		f << "defaultSoundfont=" << mDefaultSoundfontFilePath << "\n";
 		f << "keepSoundfontProgramIdxBetweenLoads=" << mKeepSoundfontProgramIdxBetweenLoads << "\n";
+		f << "enableLogs=" << mEnableLogs << "\n";
 	}
+
+	LogMessage("Saved User Settings\n");
 }
 
 void BetterSF::LoadUserSettings()
@@ -699,6 +747,36 @@ void BetterSF::LoadUserSettings()
 
 			if (key == "defaultSoundfont") mDefaultSoundfontFilePath = val;
 			if (key == "keepSoundfontProgramIdxBetweenLoads") mKeepSoundfontProgramIdxBetweenLoads = (val == "1");
+			if (key == "enableLogs") mEnableLogs = (val == "1");
 		}
 	}
+
+	LogMessage("Loaded User Settings\n");
+}
+
+void BetterSF::LogMessage(const std::string& message, bool trunc) const
+{
+	DBGMSG(message.c_str());
+	if (!mEnableLogs) return;
+
+	WDL_String settingsPath;
+	INIPath(settingsPath, "BetterSF");
+	WDL_String settingsFile(settingsPath.Get());
+	settingsFile.Append("/bettersf.log");
+	
+	std::ofstream f(settingsFile.Get(), trunc ? std::ios::trunc : std::ios::app);
+	if (f) {
+		f << message << "\n";
+	}
+}
+
+BetterSF::~BetterSF()
+{
+	std::lock_guard<std::mutex> lock(mSynthMutex);
+
+	if (mSynth)
+		delete_fluid_synth(mSynth);
+
+	if (mFluidSettings)
+		delete_fluid_settings(mFluidSettings);
 }
