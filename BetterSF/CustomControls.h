@@ -210,7 +210,7 @@ public:
 		//OutputDebugString(std::format("SELECT WITH PREFIX: {}\n", prefix).c_str());
 		for (int i = 0; i < mListItems.size(); i++)
 		{
-			if (mListItems[i]._Starts_with(prefix))
+			if (mListItems[i].compare(0, prefix.size(), prefix))
 			{
 				SelectIndex(i, triggerAction);
 				return;
@@ -850,7 +850,7 @@ public:
 			mItemStrings.push_back(itemName);
 		}
 
-		SetDirty(false());
+		SetDirty(false);
 	}
 
 	void SetSelectedIndex(int idx, bool triggerAction = false)

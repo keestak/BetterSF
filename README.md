@@ -18,6 +18,8 @@ Build with CMake using:
 cmake --build build --config Release
 ```
 
+(Build with Debug config if you want to make debug builds in VS! Fluidsynth builds in whatver mode you give this.)
+
 To build a specific target, use:
 ```bash
 cmake --build ./build --config Release --target BetterSF-app

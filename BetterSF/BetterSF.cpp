@@ -1,6 +1,6 @@
 #include "BetterSF.h"
 #include "IPlug_include_in_plug_src.h"
-#include "Fluidsynth.h"
+#include "fluidsynth.h"
 #include "CustomControls.h"
 #include "IPlugPaths.h"
 #include <filesystem>
