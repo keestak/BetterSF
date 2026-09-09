@@ -1,0 +1,76 @@
+# This is a basic workflow that is manually triggered
+
+name: make release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release version (Eg. v1.2.0)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  
+jobs:
+  build:
+    uses: ./.github/workflows/build-cmake.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:  
+      - name: checkout source
+        uses: actions/checkout@v4
+        
+      - name: download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: release-assets
+
+      - name: show downloaded assets
+        run: |
+          echo "Downloaded assets:"
+          find release-assets -print
+
+      - name: prepare release assets
+        run: |
+          mkdir -p final-assets
+
+          # Windows
+          cp release-assets/windows-vs2026-artifacts/BetterSF.exe \
+             final-assets/BetterSF-Win64.exe
+
+          cp release-assets/windows-vs2026-artifacts/BetterSF.vst3 \
+             final-assets/BetterSF-Win64.vst3
+
+          cp release-assets/windows-vs2026-artifacts/BetterSF.clap \
+             final-assets/BetterSF-Win64.clap
+
+          # macOS
+          cd release-assets/macos-xcode-artifacts
+
+          zip -r "$GITHUB_WORKSPACE/final-assets/BetterSF-macOS.app.zip" BetterSF.app
+          zip -r "$GITHUB_WORKSPACE/final-assets/BetterSF-macOS.vst3.zip" BetterSF.vst3
+          zip -r "$GITHUB_WORKSPACE/final-assets/BetterSF-macOS.clap.zip" BetterSF.clap
+          
+          cd "$GITHUB_WORKSPACE"
+
+          git archive --format=zip --output=final-assets/BetterSF-Source.zip HEAD
+
+      - name: show final release assets
+        run: |
+          echo "Final release assets:"
+          ls -lah final-assets
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ inputs.tag }}" \
+            final-assets/* \
+            --target "${{ github.sha }}" \
+            --generate-notes
+      
