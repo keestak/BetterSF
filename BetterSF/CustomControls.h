@@ -149,6 +149,7 @@ public:
 	void RemoveItemAtIndex(int index)
 	{
 		mListItems.erase(mListItems.begin() + index);
+		UpdateFilteredListItems();
 		mScrollOffsetY = std::clamp(mScrollOffsetY, 0.0f, (mFilteredListItems.size() * mListItemHeight - mRECT.H()));
 		SetDirty(false);
 	}
@@ -202,7 +203,14 @@ public:
 
 	void FocusOnSelected()
 	{
-		mShouldFocusSelectedItem = true;
+		if (mVisibleSelectedIndex >= 0)
+		{
+			float selectedIndexYOffset = mListItemHeight * mVisibleSelectedIndex - mScrollOffsetY;
+			if (selectedIndexYOffset < 0 || selectedIndexYOffset > mRECT.H())
+			{
+				mShouldFocusSelectedItem = true;
+			}
+		}
 		SetDirty(false);
 	}
 
@@ -290,7 +298,7 @@ private:
 		st.mFGColor = COLOR_WHITE;
 
 		mScrollBarVisible = mFilteredListItems.size() * mListItemHeight > mRECT.H();
-		if (mScrollBarVisible)
+		if (mScrollBarVisible && mVisibleSelectedIndex >= 0)
 		{
 			float selectedIndexYOffset = mListItemHeight * mVisibleSelectedIndex - mScrollOffsetY;
 
@@ -304,6 +312,7 @@ private:
 		else
 		{
 			mScrollOffsetY = 0;
+			mShouldFocusSelectedItem = false;
 		}
 
 		for (int i = 0; i < mFilteredListItems.size(); i++)
