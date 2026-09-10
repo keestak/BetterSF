@@ -53,6 +53,8 @@ BetterSF::BetterSF(const InstanceInfo& info)
 
 	mLayoutFunc = [&](IGraphics* pGraphics) {
 
+		pGraphics->AttachTextEntryControl();	// note this line HAS to be here for the text entry controls to work properly (like the search filter entry field). otherwise they have weird behavior and cause crashes. its so stupid.
+
 		pGraphics->LoadFont("Roboto-Regular", ROBOTO_FN);
 		const IRECT b = pGraphics->GetBounds().GetPadded(-5);
 

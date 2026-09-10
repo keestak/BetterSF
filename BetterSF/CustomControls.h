@@ -87,6 +87,9 @@ public:
 	KsEditableTextControl(const IRECT& bounds, IActionFunction aF)
 		: IControl(bounds, aF)
 	{
+		mText.mSize = 20.0f;
+		mText.mAlign = EAlign::Near;
+		mText.mFGColor = ui_control_accent;
 	}
 
 	const char* GetStr()
@@ -95,7 +98,6 @@ public:
 	}
 
 private:
-	IText mText = IText();
 	std::string mStr = "";
 
 	void OnMouseDown(float x, float y, const IMouseMod& mod) override
@@ -114,9 +116,6 @@ private:
 		//draw bg
 		g.FillRoundRect(bgcol_dark, mRECT);
 		g.DrawRoundRect(ui_control_accent, mRECT);
-		mText.mSize = 20.0f;
-		mText.mAlign = EAlign::Near;
-		mText.mFGColor = ui_control_accent;
 		g.DrawText(mText, mStr.c_str(), mRECT);
 	}
 };
@@ -212,7 +211,7 @@ public:
 		//OutputDebugString(std::format("SELECT WITH PREFIX: {}\n", prefix).c_str());
 		for (int i = 0; i < mListItems.size(); i++)
 		{
-			if (mListItems[i].compare(0, prefix.size(), prefix))
+			if (mListItems[i].compare(0, prefix.size(), prefix) == 0)
 			{
 				SelectIndex(i, triggerAction);
 				return;
@@ -377,7 +376,7 @@ private:
 
 		//calculate which list item is being clicked
 		int clickedIndex = (int)std::floor((y + mScrollOffsetY - mRECT.T) / mListItemHeight);
-		if (clickedIndex > mFilteredListItems.size() || clickedIndex < 0)
+		if (clickedIndex >= mFilteredListItems.size() || clickedIndex < 0)
 		{
 			SelectIndex(-1, false, false);
 			SetDirty(false);
